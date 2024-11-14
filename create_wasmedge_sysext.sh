@@ -25,6 +25,10 @@ rm -f "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 curl -o "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -L "https://github.com/WasmEdge/WasmEdge/releases/download/${VERSION}/WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 rm -f "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 curl -o "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -L "https://github.com/WasmEdge/WasmEdge/releases/download/${VERSION}/WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+rm -f "llama-api-server.wasm"
+curl -o "llama-api-server.wasm" -L "https://github.com/LlamaEdge/LlamaEdge/releases/download/0.14.15/llama-api-server.wasm"
+rm -f "whisper-api-server.wasm"
+curl -o "whisper-api-server.wasm" -L "https://github.com/LlamaEdge/whisper-api-server/releases/download/0.3.2/whisper-api-server.wasm"
 
 # clean earlier SYSEXTNAME directory and recreate
 rm -rf "${SYSEXTNAME}"
@@ -43,20 +47,27 @@ mkdir -p "${SYSEXTNAME}"/usr/bin # binary
 mkdir -p "${SYSEXTNAME}"/usr/lib/wasmedge # .so files
 mkdir -p "${SYSEXTNAME}"/usr/lib/plugin-ggml # wasi-nn-ggml
 mkdir -p "${SYSEXTNAME}"/usr/lib/plugin-whisper # wasi-nn-whisper
+mkdir -p "${SYSEXTNAME}"/usr/lib/wasm # for wasm applications
+
 
 # extract plugins
 tar --force-local -xvf "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -C "${SYSEXTNAME}/usr/lib/plugin-ggml"
 tar --force-local -xvf "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -C "${SYSEXTNAME}/usr/lib/plugin-whisper"
 
+rm -f "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+rm -f "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+
 mv "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/bin/wasmedge "${SYSEXTNAME}"/usr/bin/
 mv "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/lib/* "${SYSEXTNAME}"/usr/lib/wasmedge/
-
-echo "DEBUG============="
-tree "${SYSEXTNAME}"
-echo "DEBUG============="
+mv "llama-api-server.wasm" "${SYSEXTNAME}"/usr/lib/wasm
+mv "whisper-api-server.wasm" "${SYSEXTNAME}"/usr/lib/wasm
 
 # clean up any extracted mess # currently in WasmEdge-"${VERSION}"-Linux/bin/wasmedge -- there's bin/ include/ lib/ to clean up
 rm -rf "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/bin/ "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/include/ "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/lib
+
+echo "============= Show the current sysext contents ============="
+tree "${SYSEXTNAME}"
+echo "============================================================"
 
 # bake the .raw. This process uses the generic binary name for layer metadata
 "${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"
