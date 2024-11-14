@@ -21,15 +21,19 @@ SYSEXTNAME="$2"
 # clean and obtain the specified version
 rm -f "WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 curl -o "WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -L "https://github.com/WasmEdge/WasmEdge/releases/download/${VERSION}/WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+rm -f "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+curl -o "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -L "https://github.com/WasmEdge/WasmEdge/releases/download/${VERSION}/WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+rm -f "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
+curl -o "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -L "https://github.com/WasmEdge/WasmEdge/releases/download/${VERSION}/WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 
 # clean earlier SYSEXTNAME directory and recreate
 rm -rf "${SYSEXTNAME}"
 mkdir -p "${SYSEXTNAME}"
 
-# extract wasmtime into SYSEXTNAME/
+# extract wasmedge into SYSEXTNAME/
 tar --force-local -xvf "WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -C "${SYSEXTNAME}"
 
-# ends up in WasmEdge-0.13.3-Linux/bin/wasmedge -- there's bin/ include/ lib/ to clean up
+# ends up in WasmEdge-${VERSION}-Linux/bin/wasmedge -- there's bin/ include/ lib/ to clean up
 
 # clean downloaded tarball
 rm "WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
@@ -37,12 +41,22 @@ rm "WasmEdge-${VERSION}-ubuntu20.04_${ARCH}.tar.gz"
 # create deployment directory in SYSEXTNAME/ and move wasmtime into it
 mkdir -p "${SYSEXTNAME}"/usr/bin # binary
 mkdir -p "${SYSEXTNAME}"/usr/lib/wasmedge # .so files
+mkdir -p "${SYSEXTNAME}"/usr/lib/plugin-ggml # wasi-nn-ggml
+mkdir -p "${SYSEXTNAME}"/usr/lib/plugin-whisper # wasi-nn-whisper
 
-mv "${SYSEXTNAME}"/WasmEdge-0.13.3-Linux/bin/wasmedge "${SYSEXTNAME}"/usr/bin/
-mv "${SYSEXTNAME}"/WasmEdge-0.13.3-Linux/lib/* "${SYSEXTNAME}"/usr/lib/wasmedge/
+# extract plugins
+tar --force-local -xvf "WasmEdge-plugin-wasi_nn-ggml-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -C "${SYSEXTNAME}/usr/lib/plugin-ggml"
+tar --force-local -xvf "WasmEdge-plugin-wasi_nn-whisper-${VERSION}-ubuntu20.04_${ARCH}.tar.gz" -C "${SYSEXTNAME}/usr/lib/plugin-whisper"
 
-# clean up any extracted mess # currently in WasmEdge-0.13.3-Linux/bin/wasmedge -- there's bin/ include/ lib/ to clean up
-rm -rf "${SYSEXTNAME}"/WasmEdge-0.13.3-Linux/bin/ "${SYSEXTNAME}"/WasmEdge-0.13.3-Linux/include/ "${SYSEXTNAME}"/WasmEdge-0.13.3-Linux/lib
+mv "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/bin/wasmedge "${SYSEXTNAME}"/usr/bin/
+mv "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/lib/* "${SYSEXTNAME}"/usr/lib/wasmedge/
+
+echo "DEBUG============="
+tree "${SYSEXTNAME}"
+echo "DEBUG============="
+
+# clean up any extracted mess # currently in WasmEdge-"${VERSION}"-Linux/bin/wasmedge -- there's bin/ include/ lib/ to clean up
+rm -rf "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/bin/ "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/include/ "${SYSEXTNAME}"/WasmEdge-"${VERSION}"-Linux/lib
 
 # bake the .raw. This process uses the generic binary name for layer metadata
 "${SCRIPTFOLDER}"/bake.sh "${SYSEXTNAME}"
